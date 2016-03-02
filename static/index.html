@@ -14,6 +14,52 @@
     <div class="page"></div>
   </div>
   
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-beta1/jquery.min.js" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.3/backbone-min.js"></script>
+  
+  <!--<script src="./underscore.js" type="text/javascript"></script>
+  <script src="./backbone.js"></script>-->
+  <script>
+
+    $.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
+      options.url = 'ec2-52-36-222-212.us-west-2.compute.amazonaws.com' + options.url;
+    });
+
+    var Users = Backbone.Collection.extend({
+        url: '/users'
+    });
+
+    var UserList = Backbone.View.extend({ 
+      el: '.page',
+      render: function () { // each view has a render function
+        var users = new Users();
+        users.fetch({
+          success: function () {            
+            this.$el.html('!Content Should Show Here!');  
+          }
+        })
+      }
+    });
+
+    var Router = Backbone.Router.extend({
+      routes: {
+        '': 'home'
+      }
+    });
+
+    var userList = new UserList();
+    
+    var router = new Router();
+    router.on('route:home', function () { // jQuery stuffs
+      //console.log("We have loaded the home page");
+      userList.render();
+    });
+
+    Backbone.history.start(); // tell backbone to start listening to the URL
+
+  </script>
+    
 </body>
     
     
