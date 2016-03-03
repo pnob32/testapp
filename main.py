@@ -4,32 +4,36 @@ import json
 
 app = Flask(__name__, static_url_path='')
 
-books = [
+users = [
     {
-        'id': 1,
-        'title': u'Buy groceries',
-        'description': u'Milk, Cheese, Pizza, Fruit, Tylenol', 
-        'done': False
+        'first_name': u'Patrick',
+        'last_name': u'Noble',
+        'age': 24 
     },
     {
-        'id': 2,
-        'title': u'Learn Python',
-        'description': u'Need to find a good Python tutorial on the web', 
-        'done': False
+        'first_name': u'Robyn',
+        'last_name': u'Cromwell',
+        'age': 28 
     }
 ]
 
-@app.route('/book/<book_id>')
-def get_book(book_id):
-    b = {}
-    for cur in books:
-        if cur['id'] == int(book_id):
-            b = cur 
-    return jsonify(b) 
+@app.route('/user/<user_id>')
+def get_user(user_id):
+    b = 'user not found'
+    for cur in users:
+        if cur['id'] == int(user_id):
+            #b = cur 
+            b = json.dumps(cur)
+    #return json.dumps(b) 
+    return b
 
-@app.route('/books', methods=['GET'])
-def get_books():
-    return json.dumps(books)
+@app.route('/users', methods=['GET'])
+def get_users():
+    return json.dumps(users)
+
+@app.route('/helloworld', methods=['GET'])
+def helloWorld():
+    return 'Hello World'
 
 @app.route('/', methods=['GET'])
 def root():

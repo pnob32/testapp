@@ -13,8 +13,36 @@
     <hr />
     <div class="page"></div>
   </div>
+
+  <!-- template stuffs -->
+
+  <script type="text/template" id="user-list-template">
+   
+    <table class="table striped">
+      <thead>
+        <tr>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Age</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% _.each(users, function(user) { %>
+          <tr>
+            <td><%= user.get('first_name') %></td>
+            <td><%= user.get('last_name') %></td>
+            <td><%= user.get('age') %></td>
+            <td></td>
+          </tr>
+        <% }); %>
+
+      </tbody>
+    </table>
+  </script>
+ 
   
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-beta1/jquery.min.js" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.1/jquery.min.js" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.3/backbone-min.js"></script>
   
@@ -22,9 +50,11 @@
   <script src="./backbone.js"></script>-->
   <script>
 
-    $.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
-      options.url = 'ec2-52-36-222-212.us-west-2.compute.amazonaws.com' + options.url;
-    });
+    // AJAX prefilter defined here... might not need this anymore
+
+    //$.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
+      //options.url = '' + options.url;
+    //});
 
     var Users = Backbone.Collection.extend({
         url: '/users'
@@ -33,10 +63,13 @@
     var UserList = Backbone.View.extend({ 
       el: '.page',
       render: function () { // each view has a render function
+        var that = this;
         var users = new Users();
         users.fetch({
-          success: function () {            
-            this.$el.html('!Content Should Show Here!');  
+          success: function (users) {  
+            var obj = {users: users.models}          
+            var template = _.template($('#user-list-template').html())(obj);
+            that.$el.html(template);
           }
         })
       }
