@@ -19,6 +19,8 @@
   <script type="text/template" id="user-list-template">
    
     <table class="table striped">
+    <a href="#/new" class="btn btn-primary">New User</a>
+    <hr />
       <thead>
         <tr>
           <th>First Name</th>
@@ -30,15 +32,33 @@
       <tbody>
         <% _.each(users, function(user) { %>
           <tr>
-            <td><%= user.get('first_name') %></td>
-            <td><%= user.get('last_name') %></td>
-            <td><%= user.get('age') %></td>
-            <td></td>
+            <td><%= htmlEncode(user.get('firstname')) %></td>
+            <td><%= htmlEncode(user.get('lastname')) %></td>
+            <td><%= htmlEncode(user.get('age')) %></td>
+            <td><a href="#/edit/<%= user.id %>" class="btn">Edit</a></td>
           </tr>
         <% }); %>
 
       </tbody>
     </table>
+  </script>
+
+  <script type="text/template" id="edit-user-template">
+    <form class="edit-user-form">
+      <legend><%= user ? 'Edit' : 'New' %> User</legend>
+      <label>First Name</label>
+      <input type="text" name="firstname" value="<%= user ? user.get('firstname') : '' %>" required />
+      <label>Last Name</label>
+      <input type="text" name="lastname" value="<%= user ? user.get('lastname') : '' %>" required />
+      <label>Age</label>
+      <input type="text" name="age" value="<%= user ? user.get('age') : '' %>" required />
+      <hr />
+      <button type="submit" class="btn"><%= user ? 'Update' : 'Create' %> User</button>
+      <% if (user) { %>
+        <input type="hidden" name="id" value="<%= user.id %>" />
+        <button data-user-id="<%= user.id %>" class="btn btn-danger delete">Delete</button>
+      <% }; %>
+    </form>
   </script>
  
   
@@ -50,14 +70,38 @@
   <script src="./backbone.js"></script>-->
   <script>
 
-    // AJAX prefilter defined here... might not need this anymore
+    function htmlEncode(value) {
+      return $('<div/>').text(value).html();
+    }
 
-    //$.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
-      //options.url = '' + options.url;
-    //});
+    // AJAX prefilter defined here... might not need this anymore
+    $.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
+      options.url = 'http://backbone-beginner.herokuapp.com' + options.url;
+    });
+
+    $.fn.serializeObject = function() {
+      var o = {};
+      var a = this.serializeArray();
+      $.each(a, function() {
+          if (o[this.name] !== undefined) {
+              if (!o[this.name].push) {
+                  o[this.name] = [o[this.name]];
+              }
+              o[this.name].push(this.value || '');
+          } else {
+              o[this.name] = this.value || '';
+          }
+      });
+      return o;
+    };
+
+    var User = Backbone.Model.extend({
+      urlRoot: '/users'
+    });
 
     var Users = Backbone.Collection.extend({
-        url: '/users'
+        url: '/users',
+        model: User
     });
 
     var UserList = Backbone.View.extend({ 
@@ -67,26 +111,82 @@
         var users = new Users();
         users.fetch({
           success: function (users) {  
-            var obj = {users: users.models}          
-            var template = _.template($('#user-list-template').html())(obj);
+            var usersObj = {users: users.models};
+            var template = _.template($('#user-list-template').html())(usersObj);
             that.$el.html(template);
           }
-        })
+        });
+        return this;
       }
     });
 
-    var Router = Backbone.Router.extend({
-      routes: {
-        '': 'home'
+    var EditUser = Backbone.View.extend({
+      el: '.page',
+
+      template: _.template($('#edit-user-template').html()),
+
+      events: {
+        'submit .edit-user-form': 'saveUser',
+        'click .delete': 'deleteUser'
+      },
+      saveUser: function (ev) { // event listener gets event object
+        console.log("editting user");
+
+        var userDetails = $(ev.currentTarget).serializeObject();
+        user = new User();
+        user.save(userDetails, {
+          success: function (user) {
+            router.navigate('', {trigger:true});
+          }
+        });
+        return false;
+      },
+      deleteUser: function (ev) {
+        console.log("deleting user");
+
+        this.user.destroy({
+          success: function () {
+            router.navigate('', {trigger:true});
+          }
+        });
+        return false;
+      },
+      render: function (options) {
+        var that = this;
+        if (options.id) {
+           // GET details
+           that.user = new User({id: options.id});
+           that.user.fetch({
+            success: function (user) {
+              var userObj = {user: user};
+              that.$el.html(that.template(userObj));
+            }
+           })
+        } else {
+          var userObj = {user: null};
+          this.$el.html(this.template(userObj));
+        }
       }
     });
 
     var userList = new UserList();
+    var editUser = new EditUser();
+
+    var Router = Backbone.Router.extend({
+      routes: {
+        '': 'home',
+        'new': 'editUser',
+        'edit/:id': 'editUser'
+      }
+    });
     
     var router = new Router();
     router.on('route:home', function () { // jQuery stuffs
       //console.log("We have loaded the home page");
       userList.render();
+    });
+    router.on('route:editUser', function (id) {
+      editUser.render({id: id});
     });
 
     Backbone.history.start(); // tell backbone to start listening to the URL
